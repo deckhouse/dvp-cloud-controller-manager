@@ -24,7 +24,7 @@ resources:
 ```shell
 kubectl apply -k deploy/host/
 ```
-3. Create base64 of host cluster kubeconfig for the CCM service account::
+3. Create base64 of host cluster kubeconfig for the `dvp-cloud-controller-manager` service account::
 ```shell
 # ! Change SERVER and NAMESPACE values below ! 
 SERVER="https://your-server:6443"
@@ -35,7 +35,7 @@ curl -s https://github.com/deckhouse/virtualization-cloud-controller-manager/mai
 
 1. Create `user-values.yaml` with the following parameters:
 ```user-values.yaml
-## Requied
+## Required
 clusterName: 
    # tenant cluster name
 podCIDR:
