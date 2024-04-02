@@ -39,18 +39,18 @@ clusters:
 - cluster:
     certificate-authority-data: $CERT
     server: $SERVER
-  name: csi
+  name: ccm
 contexts:
 - context:
-    cluster: csi
+    cluster: ccm
     namespace: $NAMESPACE
-    user: csi
-  name: csi@csi
-current-context: csi@csi
+    user: ccm
+  name: ccm@ccm
+current-context: ccm@ccm
 kind: Config
 preferences: {}
 users:
-- name: csi
+- name: ccm
   user:
     token: $TOKEN"""
   echo "$config" | base64 -w 0
