@@ -1,0 +1,17 @@
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualMachineDisk
+metadata:
+  name: {{ .Release.Name }}-root-master-0
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "tenant-cluster.labels" . | nindent 4 }}
+spec:
+  persistentVolumeClaim:
+    size: {{ .Values.masterSpec.rootSize }}
+    {{- if .Values.storageClass }}
+    storageClass: {{ .Values.storageClass }}
+    {{- end }}
+  dataSource:
+    type: VirtualMachineImage
+    virtualMachineImage:
+      name: {{ .Release.Name }}-vmi

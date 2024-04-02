@@ -1,0 +1,14 @@
+---
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualMachineImage
+metadata:
+  name: {{ .Release.Name }}-vmi
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "tenant-cluster.labels" . | nindent 4 }}
+spec:
+  storage: ContainerRegistry
+  dataSource:
+    type: HTTP
+    http:
+      url: {{ .Values.imageURL }}

@@ -1,0 +1,9 @@
+---
+apiVersion: deckhouse.io/v1
+kind: NodeGroup
+metadata:
+  name: worker
+spec:
+  disruptions:
+    approvalMode: Manual
+  nodeType: Static

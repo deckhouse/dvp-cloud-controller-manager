@@ -1,0 +1,31 @@
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualMachine
+metadata:
+  name: {{ .Release.Name }}-master-0
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "tenant-cluster.labels" . | nindent 4 }}
+    role: master
+spec:
+  runPolicy: AlwaysOn
+  enableParavirtualization: true
+  osType: Generic
+  bootloader: BIOS
+  {{- with .Values.masterSpec.cpu }}
+  cpu:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.masterSpec.memory }}
+  memory:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  disruptions:
+    restartApprovalMode: Automatic
+  provisioning:
+    type: UserDataSecret
+    userDataSecretRef:
+      name: {{ .Release.Name }}-cloudinit
+  blockDevices:
+    - type: VirtualMachineDisk
+      virtualMachineDisk:
+        name: {{ .Release.Name }}-root-master-0

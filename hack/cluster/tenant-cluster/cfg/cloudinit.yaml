@@ -1,0 +1,31 @@
+#cloud-config
+package_update: true
+packages:
+  - tmux
+  - htop
+  - qemu-guest-agent
+  - iputils-ping
+  - jq
+  - rsync
+  - fio
+
+users:
+  - name: cloud
+    # passwd: cloud
+    passwd: $6$rounds=4096$vln/.aPHBOI7BMYR$bBMkqQvuGs5Gyd/1H5DP4m9HjQSy.kgrxpaGEHwkX7KEFV8BS.HZWPitAtZ2Vd8ZqIZRqmlykRCagTgPejt1i.
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    chpasswd: { expire: False }
+    lock_passwd: false
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFxcXHmwaGnJ8scJaEN5RzklBPZpVSic4GdaAsKjQoeA your_email@example.com
+write_files:
+  - path: /etc/ssh/sshd_config.d/override.conf
+    content: |
+      PasswordAuthentication yes
+      PubkeyAuthentication yes
+      AllowTcpForwarding yes
+runcmd:
+  - systemctl restart sshd
+
+final_message: "🔥🔥🔥 The system is finally up, after $UPTIME seconds 🔥🔥🔥"

@@ -1,0 +1,67 @@
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  repository: "dev-registry.deckhouse.io/virt/dev/dvp-cloud-controller-manager"
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+
+hostNetwork: ""
+dnsPolicy: ""
+priorityClassName: ""
+restartPolicy: ""
+schedulerName: ""
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    ephemeral-storage: 50Mi
+    cpu: 100m
+    memory: 128Mi
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: http
+readinessProbe:
+  httpGet:
+    path: /
+    port: http
+
+tolerations:
+  - operator: Exists
+nodeSelector:
+  node-role.kubernetes.io/control-plane: ""
+
+ports:
+  addressPort: 11258
+  addressPortAlias: https
+
+extraEnv: []
+extraArgs:
+  leader-elect: true
+  allocate-node-cidrs: true
+  v: 2
+
+clusterName: "tenant-cluster"
+podCIDR: ""
+kubeconfigDataBase64: ""
+
+config: {}
