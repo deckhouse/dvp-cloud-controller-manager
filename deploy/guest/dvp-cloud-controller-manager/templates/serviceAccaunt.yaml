@@ -1,0 +1,9 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: "{{ include "dvp-cloud-controller-manager.name" . }}"
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dvp-cloud-controller-manager.labels" . | nindent 4 }}
+automountServiceAccountToken: true

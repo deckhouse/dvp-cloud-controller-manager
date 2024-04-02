@@ -1,0 +1,15 @@
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: "system:{{ include "dvp-cloud-controller-manager.name" . }}"
+  labels:
+    {{- include "dvp-cloud-controller-manager.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: "system:{{ include "dvp-cloud-controller-manager.name" . }}"
+subjects:
+  - kind: ServiceAccount
+    name: "{{ include "dvp-cloud-controller-manager.name" . }}"
+    namespace: {{ .Release.Namespace }}

@@ -1,0 +1,35 @@
+{{ $count := (.Values.workerSpec.count | int) }}
+{{- range until $count  }}
+---
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualMachineDisk
+metadata:
+  name: {{ $.Release.Name }}-root-node-{{ . }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "tenant-cluster.labels" $ | nindent 4 }}
+spec:
+  persistentVolumeClaim:
+    size: {{ $.Values.workerSpec.rootSize }}
+    {{- if $.Values.storageClass }}
+    storageClass: {{ $.Values.storageClass }}
+    {{- end }}
+  dataSource:
+    type: VirtualMachineImage
+    virtualMachineImage:
+      name: {{ $.Release.Name }}-vmi
+---
+apiVersion: virtualization.deckhouse.io/v1alpha2
+kind: VirtualMachineDisk
+metadata:
+  name: {{ $.Release.Name }}-data-node-{{ . }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "tenant-cluster.labels" $ | nindent 4 }}
+spec:
+  persistentVolumeClaim:
+    size: {{ $.Values.workerSpec.dataSize }}
+    {{- if $.Values.storageClass }}
+    storageClass: {{ $.Values.storageClass }}
+    {{- end }}
+{{end}}

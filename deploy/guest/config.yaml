@@ -1,0 +1,11 @@
+kubeconfigPath: "/path/to/kubeconfig"
+namespace: "namespace in host cluster"
+zoneAndRegionEnabled: true
+infraLabels:
+  "key1": "value1"
+  "key2": "value2"
+loadBalancer:
+  creationPollInterval: 5
+  creationPollTimeout: 300
+  selectorLess: false
+

@@ -1,0 +1,148 @@
+version: "3"
+
+silent: true
+
+env:
+  IMAGE: dev-registry.deckhouse.io/virt/dev/dvp-cloud-controller-manager:latest
+  TENANT_KUBERNETES_VERSION: 1.27
+  TENANT_CLUSTER_NAME: tenant-ccm
+  DVP_NAMESPACE: tenant-ccm
+
+tasks:
+  # Cluster Section
+  #########################################
+  cluster:deploy:
+    desc: "Deploy deckhouse cluster in DVP"
+    deps:
+      - _ensure:d8
+      - _ensure:helm
+      - _ensure:docker
+    cmd: ./hack/cluster/deckhouse-up.sh deploy
+
+  cluster:bootstrap:
+    desc: "Bootstrap deckhouse cluster in DVP"
+    deps:
+      - _ensure:d8
+      - _ensure:docker
+    cmd: ./hack/cluster/deckhouse-up.sh bootstrap
+
+  cluster:bootstrap:control-plane:
+    desc: "Bootstrap only control-plane deckhouse cluster in DVP"
+    deps:
+      - _ensure:d8
+      - _ensure:docker
+    cmd: ./hack/cluster/deckhouse-up.sh bootstrap --only-control-plane=true
+
+  cluster:bootstrap:compute-nodes:
+    desc: "Bootstrap only compute nodes deckhouse cluster in DVP"
+    deps:
+      - _ensure:d8
+      - _ensure:docker
+    cmd: ./hack/cluster/deckhouse-up.sh bootstrap --only-compute-nodes=true
+
+  cluster:prepare-infra:
+    desc: "Prepare infra for deckhouse cluster in DVP"
+    deps:
+      - _ensure:d8
+      - _ensure:helm
+    cmd: ./hack/cluster/deckhouse-up.sh prepare-infra
+
+  cluster:destroy:
+    desc: "Destroy deckhouse cluster in DVP"
+    deps:
+      - _ensure:d8
+      - _ensure:helm
+    cmd: ./hack/cluster/deckhouse-up.sh destroy
+
+  cluster:kubeconfig:
+    desc: "Get kubeconfig for deckhouse cluster in DVP"
+    deps:
+      - _ensure:d8
+    cmd: ./hack/cluster/deckhouse-up.sh kubeconfig
+
+  cluster:ssh-master:
+    desc: "SSH to master node"
+    deps:
+      - _ensure:d8
+    cmds:
+      - |
+        MASTER_NAME=$(kubectl get vm -o jsonpath='{.items[0].metadata.name}' -l "app.kubernetes.io/instance=${TENANT_CLUSTER_NAME},role=master")
+        source $PWD/hack/cluster/common.sh
+        d8 v ssh --local-ssh --local-ssh-opts='-o StrictHostKeyChecking=no'                       \
+          --local-ssh-opts='-o UserKnownHostsFile=/dev/null' --local-ssh-opts='-o LogLevel=ERROR' \
+          -i $PWD/hack/cluster/ssh/id_ed --username="${USERNAME}" --namespace="${DVP_NAMESPACE}" "${MASTER_NAME}"
+
+  # Build Section
+  #########################################
+  build:
+    desc: "Build CCM image"
+    deps:
+      - _ensure:docker
+    cmd: docker build -t ${IMAGE} .
+
+  push:
+    desc: "Push CCM image to registry"
+    deps:
+      - _ensure:docker
+    cmd: docker push ${IMAGE}
+
+  build-push:
+    desc: "Build CCM image and push to registry"
+    cmds:
+      - task: build
+      - task: push
+
+  # Lint section
+  #########################################
+  lint:
+    desc: "Run linters locally"
+    cmds:
+      - task: lint:go
+
+  lint:go:
+    desc: "Run golangci-lint"
+    deps:
+      - _ensure:golangci-lint
+    cmds:
+      - |
+        golangci-lint run --sort-results
+
+  # Ensure section
+  #########################################
+  _ensure:golangci-lint:
+    desc: "Ensure golangci-lint is available"
+    cmds:
+      - |
+        echo -e >&2 "Please install golangci-lint https://golangci-lint.run/usage/install/"
+        exit 1
+    status:
+      - |
+        [ -f ./golangci-lint ] || which golangci-lint
+        
+
+  _ensure:d8:
+    desc: "Ensure d8 tool is installed"
+    internal: true
+    cmds:
+      - echo -e >&2 "Please install d8 https://github.com/deckhouse/deckhouse-cli"
+      - exit 1
+    status:
+      - which d8 >/dev/null
+
+  _ensure:helm:
+    desc: "Ensure helm tool is installed"
+    internal: true
+    cmds:
+      - echo -e >&2 "Please install helm https://helm.sh/docs/helm/helm_install/"
+      - exit 1
+    status:
+      - which helm >/dev/null
+
+  _ensure:docker:
+    desc: "Ensure docker tool is installed"
+    internal: true
+    cmds:
+      - echo -e >&2 "Please install docker https://docs.docker.com/engine/install/"
+      - exit 1
+    status:
+      - which docker >/dev/null

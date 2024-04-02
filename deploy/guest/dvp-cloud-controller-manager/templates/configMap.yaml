@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ include "dvp-cloud-controller-manager.name" . }}-config"
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dvp-cloud-controller-manager.labels" . | nindent 4 }}
+data:
+  config.yaml: |-
+    {{- with .Values.config }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+
+

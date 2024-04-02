@@ -1,0 +1,20 @@
+masterSpec:
+  cpu:
+    cores: 4
+    coreFraction: 100%
+  memory:
+    size: 8Gi
+  rootSize: 16G
+
+workerSpec:
+  cpu:
+    cores: 2
+    coreFraction: 100%
+  memory:
+    size: 8Gi
+  rootSize: 16G
+  dataSize: 20G
+  count: 3
+
+storageClass: ""
+imageURL: "https://share.lv426.space/jammy-server-cloudimg-amd64.img"

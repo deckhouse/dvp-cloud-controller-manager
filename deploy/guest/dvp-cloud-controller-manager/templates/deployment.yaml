@@ -1,0 +1,137 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dvp-cloud-controller-manager.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dvp-cloud-controller-manager.labels" . | nindent 4 }}
+spec:
+
+  replicas: {{ .Values.replicaCount | default 1}}
+  strategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+
+  selector:
+    matchLabels:
+      {{- include "dvp-cloud-controller-manager.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "dvp-cloud-controller-manager.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: "{{ include "dvp-cloud-controller-manager.name" . }}"
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+          args:
+            - --cluster-name={{ .Values.clusterName }}
+            - --cloud-provider=dvp
+            - --leader-elect=true
+            - --cluster-cidr={{ .Values.podCIDR }}
+            - --secure-port={{ .Values.ports.addressPort }}
+            - --bind-address=$(HOST_IP)
+            - --cloud-config=/etc/dvp/config.yaml
+            - --configure-cloud-routes=false
+          {{- with .Values.extraArgs }}
+            {{- range $k, $v := . }}
+            - --{{- $k }}={{ $v -}}
+            {{end}}
+          {{- end }}
+          env:
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: "DVP_CCM_KUBECONFIG_PATH"
+              value: "/etc/kubernetes/kubeconfig"
+            {{ with .Values.extraEnv }}
+              {{ .  | toYaml | nindent 12 }}
+            {{ end }}
+          ports:
+            - containerPort: {{ .Values.ports.addressPort }}
+              hostPort: {{ .Values.ports.addressPort }}
+              name: {{ .Values.ports.addressPortAlias }}
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: {{ .Values.ports.addressPortAlias }}
+              scheme: HTTPS
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: {{ .Values.ports.addressPortAlias }}
+              scheme: HTTPS
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+
+
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+
+          volumeMounts:
+            - mountPath: /etc/dvp/
+              name: cloud-config
+              readOnly: true
+            - mountPath: /etc/kubernetes/
+              name: kubeconfig
+              readOnly: true
+
+      hostNetwork: {{ .Values.hostNetwork            | default "true" }}
+      dnsPolicy: {{ .Values.dnsPolicy              | default "ClusterFirst" }}
+      priorityClassName: {{ .Values.priorityClassName      | default "system-cluster-critical" }}
+      restartPolicy: {{ .Values.restartPolicy          | default "Always" }}
+      schedulerName: {{ .Values.schedulerName          | default "default-scheduler" }}
+
+
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: {{ include "dvp-cloud-controller-manager.name" $ }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: cloud-config
+          configMap:
+            name: "{{ include "dvp-cloud-controller-manager.name" . }}-config"
+        - name: kubeconfig
+          secret:
+            secretName: "{{ include "dvp-cloud-controller-manager.name" . }}-kubeconfig"
